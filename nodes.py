@@ -169,39 +169,44 @@ class IfExecute:
         return (IF_TRUE if ANY else IF_FALSE,)
 
 
-class IfExecuteNode:
+class IfExecute:
     """
-    This node lets you choose from all nodes and execute the selected one when ANY is True.
+    This node executes IF_TRUE if ANY is True, otherwise it executes IF_FALSE.
+
+    ANY can be any input, IF_TRUE and IF_FALSE can be any output or None (to simulate a muted node).
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        cls.node_names = list(nodes.NODE_CLASS_MAPPINGS.keys())
+    def INPUT_TYPES(s):
         return {
             "required": {
                 "ANY": (AlwaysEqualProxy("*"),),
-                "NODE_TRUE": (cls.node_names, {"default": cls.node_names[0]}),
-                "NODE_FALSE": (cls.node_names, {"default": cls.node_names[0]}),
+                "IF_TRUE": (AlwaysEqualProxy("*"), {"default": None}),
+                "IF_FALSE": (AlwaysEqualProxy("*"), {"default": None}),
             },
         }
 
-    RETURN_TYPES = ()
+    RETURN_TYPES = (AlwaysEqualProxy("*"),)
 
-    OUTPUT_NODE = True
+    OUTPUT_TOOLTIPS = (
+        "Based on the value of ANY, either IF_TRUE or IF_FALSE will be returned. Supports None for muted outputs.",
+    )
+
+    RETURN_NAMES = ("?",)
+
+    FUNCTION = "return_based_on_bool"
 
     CATEGORY = "Logic"
 
-    FUNCTION = "execute"
-
-    def execute(self, ANY, NODE_TRUE, NODE_FALSE):
+    def return_based_on_bool(self, ANY, IF_TRUE, IF_FALSE):
+        """
+        Returns IF_TRUE if ANY is True, otherwise IF_FALSE. Either IF_TRUE or IF_FALSE can be None.
+        """
         if ANY:
-            return self.execute_node(NODE_TRUE)
+            return (IF_TRUE,) if IF_TRUE is not None else (None,)
         else:
-            return self.execute_node(NODE_FALSE)
+            return (IF_FALSE,) if IF_FALSE is not None else (None,)
 
-    def execute_node(self, node_name):
-        node = nodes.NODE_CLASS_MAPPINGS[node_name]()
-        return node.execute()
 
 
 class DebugPrint:
